@@ -17,8 +17,8 @@ Original repo: https://github.com/index-tts/index-tts
   ```
 
 ## Models
-- Create `checkpoints/` in the repo root and copy the IndexTTS-2 release there (https://huggingface.co/IndexTeam/IndexTTS-2/tree/main). Missing files will be cached from Hugging Face automatically, but a full local copy keeps everything offline.
-- For full offline use download once and place the files below:
+- Create `checkpoints/` in the repo root and copy the IndexTTS-2 release there (https://huggingface.co/IndexTeam/IndexTTS-2/tree/main). Missing files will be cached from Hugging Face automatically.
+- Recommended local copies (avoid repeated downloads):
   - `facebook/w2v-bert-2.0` -> `checkpoints/w2v-bert-2.0/` (the loader checks this folder before contacting Hugging Face)
   - BigVGAN config and weights -> `checkpoints/bigvgan/`
   - MaskGCT semantic codec -> `checkpoints/semantic_codec/model.safetensors`
