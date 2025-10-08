@@ -17,11 +17,27 @@ Original repo: https://github.com/index-tts/index-tts
   ```
 
 ## Models
-- Create `checkpoints/` in the repo root and copy the IndexTTS-2 release there (https://huggingface.co/IndexTeam/IndexTTS-2/tree/main). Missing files will be cached from Hugging Face automatically.
+- Create `checkpoints/` in the repo root and copy the IndexTTS-2 release there (https://huggingface.co/IndexTeam/IndexTTS-2/tree/main). Missing files will be cached from Hugging Face automatically, but a full local copy keeps everything offline.
+- For full offline use download once and place the files below:
+  - `facebook/w2v-bert-2.0` -> `checkpoints/w2v-bert-2.0/` (the loader checks this folder before contacting Hugging Face)
+  - BigVGAN config and weights -> `checkpoints/bigvgan/`
+  - MaskGCT semantic codec -> `checkpoints/semantic_codec/model.safetensors`
+  - CAMPPlus model -> `checkpoints/campplus_cn_common.bin`
+  - Optional: QwenEmotion (`qwen0.6bemo4-merge/`) for the text-to-emotion helper node
+- Typical layout:
+  ```
+  checkpoints/
+    config.yaml, gpt.pth, s2mel.pth, bpe.model, feat*.pt, wav2vec2bert_stats.pt
+    bigvgan/{config.json,bigvgan_generator.pt}
+    semantic_codec/model.safetensors
+    campplus_cn_common.bin
+    qwen0.6bemo4-merge/[model files]
+    w2v-bert-2.0/[HF files]
+  ```
 
 ## Nodes
-- **IndexTTS2 Simple** – speaker audio, text, optional emotion audio/vector; outputs audio + status string. Auto-selects device, FP16 on CUDA.
-- **IndexTTS2 Advanced** – Simple inputs plus overrides for sampling, speech speed, pauses, CFG, seed.
+- **IndexTTS2 Simple** - speaker audio, text, optional emotion audio/vector; outputs audio + status string. Auto-selects device (FP32 by default; optional FP16 toggle) and includes an output gain scaler.
+- **IndexTTS2 Advanced** - Simple inputs plus overrides for sampling, speech speed, pauses, CFG, seed, FP16 toggle, and output gain.
 - **IndexTTS2 Emotion Vector** – eight sliders (0.0–1.4, sum <= 1.5) producing an emotion vector.
 - **IndexTTS2 Emotion From Text** – requires ModelScope and local QwenEmotion; turns short text into an emotion vector + summary.
 
@@ -36,4 +52,14 @@ Original repo: https://github.com/index-tts/index-tts
 ## Troubleshooting
 - Windows only so far; DeepSpeed is disabled.
 - Install `wetext` if the module is missing on first launch.
+- If w2v-bert keeps downloading, confirm `checkpoints/w2v-bert-2.0/` exists (or set `W2V_BERT_LOCAL_DIR`).
+- 404 or load failures usually mean a missing file in `checkpoints/`; re-check the tree above.
 - Emotion vector sum must stay <= 1.5.
+- BigVGAN CUDA kernel warnings are expected; PyTorch fallback kicks in automatically.
+- Hearing metallic warble? Leave `use_fp16` off; enable it only if you really need more speed and accept the artifacts.
+- Need more level? Raise `output_gain` (values above 1.0 are clipped back into [-1,1]).
+
+## Logs you should see
+- `Loading config.json from local directory`
+- `SeamlessM4TFeatureExtractor loaded from: checkpoints/w2v-bert-2.0/`
+- Model paths pointing at your `checkpoints/` tree.
