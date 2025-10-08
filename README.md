@@ -5,6 +5,8 @@ Lightweight ComfyUI wrapper for IndexTTS 2 (voice cloning + emotion control). No
 
 Original repo: https://github.com/index-tts/index-tts
 
+![ComfyUI-IndexTTS2 nodes](images/overview.png)
+
 ## Updates
 - 2025-10-08: Default FP32 with optional FP16 toggle, output gain control, and a Save Audio helper node (wav/mp3 + quality parameters).
 - 2025-09-22: Added IndexTTS2 Advanced node exposing sampling, speed, seed, and other generation controls.
@@ -32,8 +34,6 @@ Original repo: https://github.com/index-tts/index-tts
 - Speaker + emotion audio -> IndexTTS2 Simple -> Save
 - Emotion Vector -> IndexTTS2 Simple -> Save
 - Emotion From Text -> IndexTTS2 Simple -> Save
-
-![ComfyUI-IndexTTS2 nodes](images/overview.png)
 
 ## Troubleshooting
 - Windows only so far; DeepSpeed is disabled.
