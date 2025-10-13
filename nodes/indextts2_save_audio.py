@@ -4,6 +4,9 @@ import numpy as np
 import folder_paths
 
 class IndexTTS2SaveAudio:
+    def __init__(self):
+        self._ui_type = "output"
+
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -21,9 +24,9 @@ class IndexTTS2SaveAudio:
             },
         }
 
-    RETURN_TYPES = ("AUDIO", "STRING")
-    RETURN_NAMES = ("audio", "saved_path")
+    RETURN_TYPES: tuple = ()
     FUNCTION = "save"
+    OUTPUT_NODE = True
     CATEGORY = "Audio/IndexTTS"
 
     def _normalize(self, mono: np.ndarray):
@@ -55,21 +58,29 @@ class IndexTTS2SaveAudio:
                 wf.writeframes(pcm16.T.tobytes())
             return True
 
-    def _compose_paths(self, name_prefix: str, batch_count: int) -> List[str]:
+    def _compose_paths(self, name_prefix: str, batch_count: int, extension: str):
         output_dir = folder_paths.get_output_directory()
         # Use Comfy's helper to build prefix and a counter
         full_output_folder, filename, counter, subfolder, filename_prefix = folder_paths.get_save_image_path(
             f"audio/{name_prefix}", output_dir
         )
-        paths = []
+        entries = []
+        normalized_subfolder = subfolder or ""
         for b in range(batch_count):
             filename_with_batch = filename.replace("%batch_num%", str(b))
-            file = f"{filename_with_batch}_{counter:05}_"
-            paths.append(os.path.join(full_output_folder, file))
+            file = f"{filename_with_batch}_{counter:05}_.{extension}"
+            entries.append(
+                {
+                    "abs_path": os.path.join(full_output_folder, file),
+                    "filename": file,
+                    "subfolder": normalized_subfolder,
+                    "type": self._ui_type,
+                }
+            )
             counter += 1
-        return paths
+        return entries
 
-    def _save_with_av(self, fmt: str, audio, filename_prefix: str, quality: str = "320k") -> List[str]:
+    def _save_with_av(self, fmt: str, audio, filename_prefix: str, quality: str = "320k") -> List[dict]:
         try:
             from comfy_extras import nodes_audio as ce_audio  # type: ignore
         except Exception as e:
@@ -82,12 +93,14 @@ class IndexTTS2SaveAudio:
             raise ValueError(f"Unsupported format for AV saver (mp3 only): {fmt}")
 
         results = ui.get("ui", {}).get("audio", [])
-        base = folder_paths.get_output_directory()
-        out: List[str] = []
-        for item in results:
-            sub = item.get("subfolder") or ""
-            out.append(os.path.join(base, sub, item.get("filename", "")))
-        return out
+        return [
+            {
+                "filename": item.get("filename", ""),
+                "subfolder": item.get("subfolder") or "",
+                "type": item.get("type") or self._ui_type,
+            }
+            for item in results
+        ]
     
     def save(self, audio, name: str, format: str,
              normalize_peak: bool = False,
@@ -124,23 +137,27 @@ class IndexTTS2SaveAudio:
             batch.append(np_w)
 
         name_prefix = (name or "tts2").strip() or "tts2"
-        paths: List[str] = []
+        ui_results: List[dict] = []
 
         if format == "wav":
-            base_paths = self._compose_paths(name_prefix, len(batch))
-            for np_w, base in zip(batch, base_paths):
-                out_path = base + ".wav"
+            entries = self._compose_paths(name_prefix, len(batch), "wav")
+            for np_w, entry in zip(batch, entries):
+                out_path = entry["abs_path"]
                 os.makedirs(os.path.dirname(out_path), exist_ok=True)
                 self._save_wav(out_path, np_w, sr, wav_pcm)
-                paths.append(out_path)
+                ui_results.append(
+                    {
+                        "filename": entry["filename"],
+                        "subfolder": entry["subfolder"],
+                        "type": entry["type"],
+                    }
+                )
         elif format == "mp3":
-            paths = self._save_with_av("mp3", audio, filename_prefix=f"audio/{name_prefix}", quality=mp3_bitrate)
+            ui_results = self._save_with_av("mp3", audio, filename_prefix=f"audio/{name_prefix}", quality=mp3_bitrate)
         else:
             raise ValueError(f"Unsupported format: {format}")
 
-        saved = "\n".join(paths)
-        # passthrough audio so the graph can continue if needed
-        return (audio, saved)
+        return {"ui": {"audio": ui_results}}
 
 
 
