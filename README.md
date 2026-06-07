@@ -8,6 +8,7 @@ Original repo: https://github.com/index-tts/index-tts
 ![ComfyUI-IndexTTS2 nodes](images/overview.png)
 
 ## Updates
+- 2026-06-07: 增加自定义停顿功能的支持，允许用户在文本中增加 <rf_pause:100ms> 作为停顿表示，100ms表示停顿时间是100毫秒，停顿时长单位仅支持毫秒。
 - 2025-10-13: Save Audio node now acts as an output node with an embedded player overlay for instant preview inside the graph (no need for downstream preview nodes).
 - 2025-10-08: Default FP32 with optional FP16 toggle, output gain control, and a Save Audio helper node (wav/mp3 + quality parameters).
 - 2025-09-22: Added IndexTTS2 Advanced node exposing sampling, speed, seed, and other generation controls.
